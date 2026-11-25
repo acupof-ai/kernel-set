@@ -152,28 +152,28 @@ def gpu_to_sm(gpu: Optional[str]) -> Optional[int]:
 
 # --------------------------------------------------------------------------- #
 # Auto-detected device SM (when torch is importable with a visible CUDA GPU).
-# Cached; safe to call with no torch (returns None).
+# Cached per CUDA device; safe to call with no torch (returns None).
 # --------------------------------------------------------------------------- #
-_DETECTED_SM: Optional[int] = None
-_DETECTED_DONE = False
+_DEVICE_SMS: Dict[int, int] = {}
 
 
 def detect_sm() -> Optional[int]:
     """Best-effort compute capability of the current CUDA device, or ``None``
-    on a CPU/no-GPU host. Never raises; result cached for the process."""
-    global _DETECTED_SM, _DETECTED_DONE
-    if _DETECTED_DONE:
-        return _DETECTED_SM
-    _DETECTED_DONE = True
+    on a CPU/no-GPU host. Successful results are cached by device index."""
     try:
         import torch  # type: ignore
 
-        if torch.cuda.is_available():
-            major, minor = torch.cuda.get_device_capability(0)
-            _DETECTED_SM = major * 10 + minor
+        if not torch.cuda.is_available():
+            return None
+        device = torch.cuda.current_device()
+        sm = _DEVICE_SMS.get(device)
+        if sm is None:
+            major, minor = torch.cuda.get_device_capability(device)
+            sm = major * 10 + minor
+            _DEVICE_SMS[device] = sm
+        return sm
     except Exception:
-        _DETECTED_SM = None
-    return _DETECTED_SM
+        return None
 
 
 def resolve_sm(gpu: Optional[str]) -> Optional[int]:
