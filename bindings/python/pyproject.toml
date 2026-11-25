@@ -51,3 +51,4 @@ kernel_set = [
     "lib/*.dylib",
     "lib/*.dll",
 ]
+"kernel_set.backends" = ["optimal.json"]

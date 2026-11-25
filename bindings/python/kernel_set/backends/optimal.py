@@ -24,18 +24,15 @@ availability/arch probing still gates which ranked provider is actually runnable
 from __future__ import annotations
 
 import json
-import os
+from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 from ._probe import _SM_THRESHOLDS, canonical_sm
 
 KERNEL_SET = "kernel-set"
 
-# Repo layout: bindings/python/kernel_set/backends/optimal.py
-#              -> providers/optimal.json  (../../../../providers/optimal.json)
-_OPTIMAL_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)),
-    "..", "..", "..", "..", "providers", "optimal.json")
+_PACKAGED_CATALOG = Path(__file__).with_suffix(".json")
+_CHECKOUT_CATALOG = _PACKAGED_CATALOG.resolve().parent / "../../../../providers/optimal.json"
 
 # Canonical alias map: dotted benchmark taxonomy -> dispatch logical_op id, so a
 # caller may pass either ``"attention.prefill"`` or ``"attention_prefill"``.
@@ -140,7 +137,8 @@ def _load() -> Tuple[Dict[Tuple[str, int, str], dict],
     dtypes_by_op_sm: Dict[Tuple[str, int], List[str]] = {}
     meta: dict = {}
     try:
-        with open(_OPTIMAL_PATH) as f:
+        catalog = _PACKAGED_CATALOG if _PACKAGED_CATALOG.is_file() else _CHECKOUT_CATALOG
+        with catalog.open(encoding="utf-8") as f:
             doc = json.load(f)
         meta = {k: doc[k] for k in ("schema_version", "fill_rule", "stats")
                 if k in doc}
@@ -158,7 +156,7 @@ _CELLS, _DTYPES_BY_OP_SM, _META = _load()
 
 
 def reload_table() -> None:
-    """Re-read providers/optimal.json (e.g. after regenerating it). Mainly for
+    """Re-read the provider catalog (e.g. after regenerating it). Mainly for
     tests; the table is otherwise loaded once at import."""
     global _CELLS, _DTYPES_BY_OP_SM, _META
     _CELLS, _DTYPES_BY_OP_SM, _META = _load()
@@ -250,5 +248,5 @@ def table_meta() -> dict:
 
 
 def has_table() -> bool:
-    """True if providers/optimal.json was found & parsed (non-empty index)."""
+    """True if the provider catalog was found & parsed (non-empty index)."""
     return bool(_CELLS)
