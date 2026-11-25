@@ -23,6 +23,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Unified the package version to `0.2.1` across `CMakeLists.txt`, the Python
   package, the Rust crate, and the npm package (previously drifted 0.1.0/0.2.1).
 
+### Fixed
+- Python backend selection follows the current CUDA device when no GPU is
+  specified, including after switching between GPUs with different capabilities.
+
 ## [0.2.1]
 - Python bindings and dispatch layer (baseline of this changelog).
 
