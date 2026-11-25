@@ -62,7 +62,14 @@ jobs:
           python -m venv /tmp/wheeltest
           . /tmp/wheeltest/bin/activate
           pip install bindings/python/dist/*.whl
-          python -c "import kernel_set as ks; print('import OK', ks.__version__); ks.dispatch.available()"
+          python -I - <<'PY'
+          import kernel_set as ks
+          from kernel_set.backends import optimal
+
+          assert optimal.has_table(), "wheel is missing the provider catalog"
+          print("import OK", ks.__version__)
+          ks.dispatch.available()
+          PY
 
       - uses: actions/upload-artifact@v4
         with:
